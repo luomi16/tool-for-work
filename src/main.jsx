@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
+import BatchExport from './BatchExport.jsx';
 
 const size = bytes => bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(2)} MB`;
 function App() {
+  const [tab, setTab] = useState('convert');
   const [source, setSource] = useState(null);
   const [format, setFormat] = useState('image/jpeg');
   const [width, setWidth] = useState('');
@@ -71,9 +73,9 @@ function App() {
     } catch { setError('转换失败，请尝试缩小图片尺寸。'); } finally { setBusy(false); }
   }
   return <div className="shell">
-    <aside><a className="brand" href="./"><span className="brand-icon">▦</span> 工作台<span className="brand-dot">.</span></a><div className="nav-label">我的工具</div><div className="nav-item"><span>▧</span> 图片转换 <span className="nav-arrow">↗</span></div><div className="aside-bottom"><span className="status-dot"/> 本地处理，安心使用</div></aside>
-    <main><header><span>工具箱 <span className="slash">/</span> 图片工具</span><span className="header-tag">为日常工作减负</span></header>
-      <div className="page"><div className="eyebrow">IMAGE STUDIO <span>01</span></div><h1>让图片，刚刚好<span>。</span></h1><p className="intro">转换格式、调整尺寸、减小体积。把琐碎的事，交给小工具。</p>
+    <aside><a className="brand" href="./"><span className="brand-icon">▦</span> 工作台<span className="brand-dot">.</span></a><div className="nav-label">我的工具</div><nav aria-label="工具导航">{[['convert', '▧', '图片转换'], ['batch', '▦', '四图导出']].map(([value, icon, label]) => <button key={value} className={`nav-item nav-button ${tab === value ? 'active' : ''}`} aria-current={tab === value ? 'page' : undefined} onClick={() => { setTab(value); setError(''); }}><span>{icon}</span>{label}<span className="nav-arrow">↗</span></button>)}</nav><div className="aside-bottom"><span className="status-dot"/> 本地处理，安心使用</div></aside>
+    <main><header><span>工具箱 <span className="slash">/</span> {tab === 'batch' ? '四图导出' : '图片工具'}</span><span className="header-tag">为日常工作减负</span></header>
+      <div className="page"><div className="eyebrow">IMAGE STUDIO <span>{tab === 'batch' ? '02' : '01'}</span></div><h1>{tab === 'batch' ? '一张原图，四份就绪' : '让图片，刚刚好'}<span>。</span></h1><p className="intro">{tab === 'batch' ? '填写编号，一次导出两种尺寸的 JPG 和 PNG。' : '转换格式、调整尺寸、减小体积。把琐碎的事，交给小工具。'}</p>
       <div className="workspace"><section className="image-panel"><div className="section-heading"><h2><span className="step">01</span> 选择图片</h2><span>PNG / JPG</span></div>
       <input ref={input} className="file-input" type="file" accept="image/png,image/jpeg" onChange={e => { openFile(e.target.files?.[0]); e.target.value = ''; }}/>
       <button className={`drop-zone ${dragging ? 'dragging' : ''} ${source ? 'has-image' : ''}`} onClick={() => input.current.click()} onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); openFile(e.dataTransfer.files[0]); }}>
@@ -81,14 +83,15 @@ function App() {
       </button>
       <div className="file-details">{source ? <><strong title={source.file.name}>{source.file.name}</strong><span>{source.img.naturalWidth} × {source.img.naturalHeight} px · {size(source.file.size)}</span></> : <><span className="tiny-icon">⌁</span><span>你的图片仅在此设备处理，不会上传到服务器</span></>}</div>
       </section><section className="settings-panel"><div className="section-heading"><h2><span className="step">02</span> 调整设置</h2><span>自由定义</span></div>
+      {tab === 'batch' ? <BatchExport source={source}/> : <>
       <label className="field-label">输出格式</label><div className="format-switch">{[['image/jpeg','JPG','更小体积'],['image/png','PNG','保留透明']].map(([value,name,desc]) => <button key={value} className={format === value ? 'selected' : ''} onClick={() => setFormat(value)}><strong>{name}</strong><span>{desc}</span>{format === value && <i>✓</i>}</button>)}</div>
       <div className="dimension-heading"><label className="field-label">图片尺寸 <span>px</span></label><label className="lock"><input type="checkbox" checked={locked} onChange={e => { setLocked(e.target.checked); if (e.target.checked && source) setHeight(Math.max(1, Math.round(Number(width) * source.img.naturalHeight / source.img.naturalWidth))); }}/>锁定比例</label></div>
       <div className="dimensions"><label><span>宽度</span><input aria-label="宽度" type="number" min="1" max="16000" placeholder="原始宽度" value={width} onChange={e => changeDimension('width', e.target.value)}/></label><span>×</span><label><span>高度</span><input aria-label="高度" type="number" min="1" max="16000" placeholder="原始高度" value={height} onChange={e => changeDimension('height', e.target.value)}/></label></div>
       <div className="quality-heading"><label className="field-label" htmlFor="quality">图片质量</label><strong>{format === 'image/png' ? '无损' : `${quality}%`}</strong></div><input id="quality" className="range" type="range" min="10" max="100" value={quality} disabled={format === 'image/png'} onChange={e => setQuality(Number(e.target.value))}/><div className="range-labels"><span>更小体积</span><span>更清晰</span></div>
       {format === 'image/jpeg' ? <label className="background">透明区域填充色<input aria-label="JPG 背景色" type="color" value={background} onChange={e => setBackground(e.target.value)}/></label> : <p className="png-note">PNG 保留透明度；减小尺寸可降低文件体积。</p>}
-      <button className="convert" disabled={!source || busy} onClick={convert}>{busy ? '正在处理…' : '转换图片'}<span>↗</span></button><p className="button-note">无需安装 · 无需注册 · 免费使用</p>
+      <button className="convert" disabled={!source || busy} onClick={convert}>{busy ? '正在处理…' : '转换图片'}<span>↗</span></button><p className="button-note">无需安装 · 无需注册 · 免费使用</p></>}
       </section></div>
-      <div aria-live="polite">{error && <p className="error" role="alert">{error}</p>}{result && <section className="result"><img src={result.url} alt="转换结果预览"/><div><span className="result-label">✓ 转换完成</span><h3>{result.name}</h3><p>{result.w} × {result.h} px · {size(result.bytes)}<span> · {result.bytes <= source.file.size ? `体积减少 ${Math.round((1 - result.bytes / source.file.size) * 100)}%` : `比原图增大 ${Math.round((result.bytes / source.file.size - 1) * 100)}%`}</span></p></div><a download={result.name} href={result.url}>下载图片 ↓</a></section>}</div>
+      <div aria-live="polite">{error && <p className="error" role="alert">{error}</p>}{tab === 'convert' && result && <section className="result"><img src={result.url} alt="转换结果预览"/><div><span className="result-label">✓ 转换完成</span><h3>{result.name}</h3><p>{result.w} × {result.h} px · {size(result.bytes)}<span> · {result.bytes <= source.file.size ? `体积减少 ${Math.round((1 - result.bytes / source.file.size) * 100)}%` : `比原图增大 ${Math.round((result.bytes / source.file.size - 1) * 100)}%`}</span></p></div><a download={result.name} href={result.url}>下载图片 ↓</a></section>}</div>
       <div className="features"><div><span>◎</span><div><strong>隐私优先</strong><p>文件留在你的浏览器里</p></div></div><div><span>↗</span><div><strong>即开即用</strong><p>轻量工具，专注一件事</p></div></div><div><span>▦</span><div><strong>持续生长</strong><p>更多工作小工具，陆续加入</p></div></div></div><footer>少一点重复，多一点专注。<span>WORK TOOLS / 001</span></footer>
       </div></main></div>;
 }
