@@ -58,3 +58,28 @@ git push -u origin main
 - `863.1-600x450.png`
 
 可下载包含四个文件的 ZIP，或分别下载。JPG 使用质量 1.0，PNG 无损编码；每个尺寸直接从原图生成。尺寸调整不可避免会改变像素，JPG 仍为有损格式，放大不能恢复原图细节。默认保持原图比例完整显示，JPG 留白为白色、PNG 为透明；也可选居中裁剪或拉伸。
+
+## 基金 PDF 打包
+
+「基金 PDF」中一次选择同一编号的四份 PDF，上传顺序不限，系统从原始文件名识别编号和类型：
+
+- `CF 624 Fund Limited Liability Company Agreement.pdf`
+- `CF 624 Fund Private Placement Memorandum.pdf`
+- `CF 624 Fund Subscription Agreement_Reg. D.pdf`
+- `CF 624 Fund Subscription Agreement_Reg. S.pdf`
+
+生成五份文件，可单独下载或打包 ZIP：
+
+| 输出 | 内容顺序 | 页数要求 |
+| --- | --- | --- |
+| `oper_agr_624.pdf` | LLC → PPM | 必须共 100 页 |
+| `624_sign_doc_regs.pdf` | Reg. S → LLC → PPM | Reg. S 原件至少 9 页 |
+| `624_sign_doc_regd.pdf` | Reg. D → LLC → PPM | Reg. D 原件至少 8 页 |
+| `subagree_624us.pdf` | Reg. D 原件，仅改名 | 原样保留 |
+| `subagree_624nonus.pdf` | Reg. S 原件，仅改名 | 原样保留 |
+
+签名页位置以原件第 8 / 9 页本身是所需签名页为前提。工具不识别内容或移动签名页，提供原件和输出的页码查看链接。页数不符不截断或补白。合并保留页面尺寸和文字/图像内容，不栅格化；可填写表单的当前外观固定为页面内容。两份重命名文件字节保持不变。暂不支持密码保护或 XFA PDF。文件总大小不超过 160 MB，全部处理在浏览器完成。
+
+PDF 实现参考：[页面复制](https://pdf-lib.js.org/docs/api/classes/pdfdocument#copypages)、[表单外观固定](https://pdf-lib.js.org/docs/api/classes/pdfform#flatten)。
+
+运行 `npm test` 检查文件识别、页序、页数、页面尺寸及旋转、重命名内容一致性和输入异常。GitHub Actions 会在部署前自动执行这些检查。

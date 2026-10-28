@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './style.css';
 import BatchExport from './BatchExport.jsx';
+const PdfPackage = lazy(() => import('./PdfPackage.jsx'));
 
 const size = bytes => bytes < 1048576 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1048576).toFixed(2)} MB`;
 function App() {
@@ -73,9 +74,9 @@ function App() {
     } catch { setError('转换失败，请尝试缩小图片尺寸。'); } finally { setBusy(false); }
   }
   return <div className="shell">
-    <aside><a className="brand" href="./"><span className="brand-icon">▦</span> 工作台<span className="brand-dot">.</span></a><div className="nav-label">我的工具</div><nav aria-label="工具导航">{[['convert', '▧', '图片转换'], ['batch', '▦', '四图导出']].map(([value, icon, label]) => <button key={value} className={`nav-item nav-button ${tab === value ? 'active' : ''}`} aria-current={tab === value ? 'page' : undefined} onClick={() => { setTab(value); setError(''); }}><span>{icon}</span>{label}<span className="nav-arrow">↗</span></button>)}</nav><div className="aside-bottom"><span className="status-dot"/> 本地处理，安心使用</div></aside>
-    <main><header><span>工具箱 <span className="slash">/</span> {tab === 'batch' ? '四图导出' : '图片工具'}</span><span className="header-tag">为日常工作减负</span></header>
-      <div className="page"><div className="eyebrow">IMAGE STUDIO <span>{tab === 'batch' ? '02' : '01'}</span></div><h1>{tab === 'batch' ? '一张原图，四份就绪' : '让图片，刚刚好'}<span>。</span></h1><p className="intro">{tab === 'batch' ? '填写编号，一次导出两种尺寸的 JPG 和 PNG。' : '转换格式、调整尺寸、减小体积。把琐碎的事，交给小工具。'}</p>
+    <aside><a className="brand" href="./"><span className="brand-icon">▦</span> 工作台<span className="brand-dot">.</span></a><div className="nav-label">我的工具</div><nav aria-label="工具导航">{[['convert', '▧', '图片转换'], ['batch', '▦', '四图导出'], ['pdf', '▤', '基金 PDF']].map(([value, icon, label]) => <button key={value} className={`nav-item nav-button ${tab === value ? 'active' : ''}`} aria-current={tab === value ? 'page' : undefined} onClick={() => { setTab(value); setError(''); }}><span>{icon}</span>{label}<span className="nav-arrow">↗</span></button>)}</nav><div className="aside-bottom"><span className="status-dot"/> 本地处理，安心使用</div></aside>
+    <main><header><span>工具箱 <span className="slash">/</span> {tab === 'pdf' ? '基金 PDF' : tab === 'batch' ? '四图导出' : '图片工具'}</span><span className="header-tag">为日常工作减负</span></header>
+      <div className="page">{tab === 'pdf' ? <Suspense fallback={<p>正在载入 PDF 工具…</p>}><PdfPackage/></Suspense> : <><div className="eyebrow">IMAGE STUDIO <span>{tab === 'batch' ? '02' : '01'}</span></div><h1>{tab === 'batch' ? '一张原图，四份就绪' : '让图片，刚刚好'}<span>。</span></h1><p className="intro">{tab === 'batch' ? '填写编号，一次导出两种尺寸的 JPG 和 PNG。' : '转换格式、调整尺寸、减小体积。把琐碎的事，交给小工具。'}</p>
       <div className="workspace"><section className="image-panel"><div className="section-heading"><h2><span className="step">01</span> 选择图片</h2><span>PNG / JPG</span></div>
       <input ref={input} className="file-input" type="file" accept="image/png,image/jpeg" onChange={e => { openFile(e.target.files?.[0]); e.target.value = ''; }}/>
       <button className={`drop-zone ${dragging ? 'dragging' : ''} ${source ? 'has-image' : ''}`} onClick={() => input.current.click()} onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); openFile(e.dataTransfer.files[0]); }}>
@@ -92,7 +93,7 @@ function App() {
       <button className="convert" disabled={!source || busy} onClick={convert}>{busy ? '正在处理…' : '转换图片'}<span>↗</span></button><p className="button-note">无需安装 · 无需注册 · 免费使用</p></>}
       </section></div>
       <div aria-live="polite">{error && <p className="error" role="alert">{error}</p>}{tab === 'convert' && result && <section className="result"><img src={result.url} alt="转换结果预览"/><div><span className="result-label">✓ 转换完成</span><h3>{result.name}</h3><p>{result.w} × {result.h} px · {size(result.bytes)}<span> · {result.bytes <= source.file.size ? `体积减少 ${Math.round((1 - result.bytes / source.file.size) * 100)}%` : `比原图增大 ${Math.round((result.bytes / source.file.size - 1) * 100)}%`}</span></p></div><a download={result.name} href={result.url}>下载图片 ↓</a></section>}</div>
-      <div className="features"><div><span>◎</span><div><strong>隐私优先</strong><p>文件留在你的浏览器里</p></div></div><div><span>↗</span><div><strong>即开即用</strong><p>轻量工具，专注一件事</p></div></div><div><span>▦</span><div><strong>持续生长</strong><p>更多工作小工具，陆续加入</p></div></div></div><footer>少一点重复，多一点专注。<span>WORK TOOLS / 001</span></footer>
+      </>}<div className="features"><div><span>◎</span><div><strong>隐私优先</strong><p>文件留在你的浏览器里</p></div></div><div><span>↗</span><div><strong>即开即用</strong><p>轻量工具，专注一件事</p></div></div><div><span>▦</span><div><strong>持续生长</strong><p>更多工作小工具，陆续加入</p></div></div></div><footer>少一点重复，多一点专注。<span>WORK TOOLS / 001</span></footer>
       </div></main></div>;
 }
 createRoot(document.getElementById('root')).render(<App/>);
